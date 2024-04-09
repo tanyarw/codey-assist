@@ -3,7 +3,7 @@ import logging
 from .codegen import generate_code
 from .extension import CodeyMagic
 
-def load_jupyter_server_extension(ipython):
+def load_ipython_extension(ipython):
     """Called when the extension is loaded."""
 
     logger = logging.getLogger('codey-assist')  # Get a logger for your extension
