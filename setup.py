@@ -9,13 +9,12 @@ setup(
     packages=find_packages(),  # Automatically finds your codey_assist package
     install_requires=[
         "jupyter",  # Necessary for any Jupyter extension
-        "requests",  # Example, if you make API calls
         "google-cloud-aiplatform"  # For interaction with Vertex AI
         # Add any other libraries your extension depends on
     ],
     entry_points={
         'console_scripts': [
-            'codey-assist = codey_assist.extension:load_jupyter_server_extension'
+            'codey-assist = codey_assist.extension:load_ipython_extension'
         ]
     }
 )

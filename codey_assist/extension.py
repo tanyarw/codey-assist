@@ -1,6 +1,5 @@
 import logging
 from IPython.core.magic import (cell_magic, Magics, magics_class)
-from IPython import get_ipython
 
 from codey_assist import cell_handlers, codegen
 
