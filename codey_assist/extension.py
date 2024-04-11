@@ -1,20 +1,21 @@
-import logging
+"""Extension for the magic commands."""
+
+import os
 from IPython.core.magic import (cell_magic, Magics, magics_class)
 
-from codey_assist import codegen
+from codey_assist import codegen, code_qna_gen
 
 @magics_class
 class CodeyMagic(Magics):
-    def __init__(self, shell, logger=None):
+    """Class for the magic commands."""
+
+    def __init__(self, shell):
         super().__init__(shell)  # Initialize the parent class
         self.shell = shell  # Store the IPython instance
-        self.logger = logger or logging.getLogger(__name__)  # Get a logger for your extension
 
     @cell_magic
     def codey(self, line, cell):
-        """Handler for the %codey magic command."""
-
-        self.logger.info(f"Magic command query: {line}\n{cell}")
+        """Handler for the %%codey magic command."""
 
         # Fetch code cells
         code_cells = []
@@ -25,20 +26,35 @@ class CodeyMagic(Magics):
                 code_cells.append(input_cell)
 
         other_code = "\n".join(code_cells)
-        self.logger.info(f"Other code cells found: {other_code}")
+        generated_code = codegen.generate_code(line + "\n" + cell, other_code)
+        print(generated_code)
 
-        generated_code = codegen.generate_code(cell, other_code)
-        self.logger.info(f"Generated: {generated_code}")
+    @cell_magic
+    def code_qna(self, line, cell):
+        """Handler for the %%code_qna magic command."""
 
-        # # Replace *only* the existing code content:
-        # existing_lines = cell.splitlines(keepends=True)  # Get each line of the cell
+        # Find every python file in the current working directory and sub-directories
+        all_files = []
 
-        # # (Logic to find where your existing code is within the cell - this is a placeholder!)
-        # start_index = 0  # You'll likely need to analyze existing_lines for markers
-        # end_index = len(existing_lines)  # Replace everything until the end
+        for root, _, files in os.walk(os.getcwd()):
+            if (
+                ".venv" in root
+                or "__pycache__" in root
+                or ".vscode" in root
+                or ".idea" in root
+                or ".git" in root
+            ):
+                continue
 
-        # new_lines = existing_lines[:start_index] + [generated_code] + existing_lines[end_index:]
-        # new_cell_content = "".join(new_lines)
+            for name in files:
+                relative_path = os.path.relpath(os.path.join(root, name))
+                all_files.append(relative_path)
 
-        # # Replace the cell content
-        # self.shell.run_cell(new_cell_content)
+        # Load documents, generate vectors and store in Vector database
+        code_chunks = []
+        for file in all_files:
+            code_chunks.extend(code_qna_gen.chunk_code(file))
+
+        db = code_qna_gen.create_index(code_chunks)
+
+        code_qna_gen.answer_question(line + "\n" + cell, db)
