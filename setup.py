@@ -1,3 +1,5 @@
+"""Setup file for codey-assist"""
+
 from setuptools import setup, find_packages
 
 setup(
@@ -10,11 +12,11 @@ setup(
     install_requires=[
         "jupyter",  # Necessary for any Jupyter extension
         "google-cloud-aiplatform"  # For interaction with Vertex AI
-        # Add any other libraries your extension depends on
+        "langchain"
+        "langchain_google_vertexai"
+        "chromadb",
     ],
     entry_points={
-        'console_scripts': [
-            'codey-assist = codey_assist.extension:load_ipython_extension'
-        ]
-    }
+        "console_scripts": ["codey-assist = codey_assist:load_ipython_extension"]
+    },
 )
