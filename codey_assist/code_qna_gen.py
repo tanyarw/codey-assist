@@ -60,7 +60,7 @@ def create_index(
     return db
 
 
-def answer_question(question, db, logger=None):
+def answer_question(question, db):
     """Generates code response based on the question"""
 
     template = """
