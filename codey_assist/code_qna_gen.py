@@ -73,11 +73,12 @@ user's question:
 {input}
 
 If you cannot find an answer ask the user to rephrase the question.
+Add supplemental code snippet where possible.
 answer:
     """
 
     # Create the retrieval chain
-    model = TextGenerationModel.from_pretrained("code-bison-32k")
+    model = TextGenerationModel.from_pretrained("text-bison-32k")
 
     retriever = db.as_retriever(search_type="similarity", search_kwargs={"k": 3})
     docs = retriever.get_relevant_documents(question)
@@ -88,8 +89,8 @@ answer:
 
     response = model.predict(
         template.format(context=context, input=question),
-        temperature=0.2,
-        max_output_tokens=2048,
+        temperature=0.3,
+        max_output_tokens=4096,
     )
 
     print(response.text)
