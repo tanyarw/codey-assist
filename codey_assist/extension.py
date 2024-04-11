@@ -11,18 +11,18 @@ class CodeyMagic(Magics):
         self.logger = logger or logging.getLogger(__name__)  # Get a logger for your extension
 
     @cell_magic
-    def codey(self, _, cell):
+    def codey(self, line, cell):
         """Handler for the %codey magic command."""
 
-        self.logger.info(f"Magic command query: {cell}")
+        self.logger.info(f"Magic command query: {line}\n{cell}")
 
         # Fetch code cells
         code_cells = []
         for input_cell in self.shell.user_ns['In']:
             if not input_cell.startswith("get_ipython().run_cell_magic('codey'"):
-              if "get_ipython().run_line_magic('load_ext', 'codey_assist'" in input_cell:
-                  input_cell = input_cell.replace("get_ipython().run_line_magic('load_ext', 'codey_assist')", "")
-              code_cells.append(input_cell)
+                if "get_ipython().run_line_magic('load_ext', 'codey_assist'" in input_cell:
+                    input_cell = input_cell.replace("get_ipython().run_line_magic('load_ext', 'codey_assist')", "")
+                code_cells.append(input_cell)
 
         other_code = "\n".join(code_cells)
         self.logger.info(f"Other code cells found: {other_code}")
