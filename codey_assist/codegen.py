@@ -1,13 +1,11 @@
-import logging
+"""Module to generate code"""
 
 import vertexai
 from vertexai.language_models import CodeGenerationModel
 
 
-def generate_code(prompt, other_code, logger=None):
+def generate_code(prompt, other_code):
     """Function to encapsulate the call to your Vertex AI model."""
-
-    logger = logger or logging.getLogger(__name__)
 
     vertexai.init(project="gdc-ai-playground", location="us-central1")
     parameters = {
@@ -27,8 +25,6 @@ Surround the code in backticks ```python....```
 
 Code:
     """
-    logger.info(f"Input prompt: {input_prompt}")
-
     response = model.predict(prefix=input_prompt, **parameters)
 
     return response.text

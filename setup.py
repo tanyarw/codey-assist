@@ -11,9 +11,9 @@ setup(
     packages=find_packages(),  # Automatically finds your codey_assist package
     install_requires=[
         "jupyter",  # Necessary for any Jupyter extension
-        "google-cloud-aiplatform"  # For interaction with Vertex AI
-        "langchain"
-        "langchain_google_vertexai"
+        "google-cloud-aiplatform",  # For interaction with Vertex AI
+        "langchain",
+        "langchain_google_vertexai",
         "chromadb",
     ],
     entry_points={
