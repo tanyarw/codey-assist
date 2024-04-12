@@ -1,6 +1,5 @@
 """Module to answer code queries"""
 
-import vertexai
 from typing import List
 import vertexai
 from vertexai.language_models import TextGenerationModel
@@ -15,10 +14,11 @@ from langchain_text_splitters import (
 vertexai.init(project="gdc-ai-playground", location="us-central1")
 
 
-def chunk_code(file_name):
+def chunk_code(file_name: str) -> List[Document]:
     """Chunks a code file into smaller units."""
     chunked_code = []
 
+    # Python splitter
     if file_name.endswith(".py"):
         python_splitter = RecursiveCharacterTextSplitter.from_language(
             language=Language.PYTHON, chunk_size=1000, chunk_overlap=200
@@ -29,6 +29,7 @@ def chunk_code(file_name):
                 [code], metadatas=[{"source": file_name}]
             )
 
+    # JS splitter
     elif file_name.endswith(".js"):
         js_splitter = RecursiveCharacterTextSplitter.from_language(
             language=Language.JS, chunk_size=1000, chunk_overlap=200
@@ -39,6 +40,7 @@ def chunk_code(file_name):
                 [code], metadatas=[{"source": file_name}]
             )
 
+    # Markdown splitter
     elif file_name.endswith(".md"):
         js_splitter = RecursiveCharacterTextSplitter.from_language(
             language=Language.MARKDOWN, chunk_size=1000, chunk_overlap=200
@@ -55,7 +57,7 @@ def chunk_code(file_name):
 def create_index(
     code_chunks: List[Document],
     persist_path: str,
-):
+) -> None:
     """Embeds texts with a pre-trained, foundational model and creates Chroma DB index."""
 
     embeddings = VertexAIEmbeddings(
@@ -64,15 +66,17 @@ def create_index(
 
     print("Building index...")
 
+    # Create index from chunked code
     db = Chroma.from_documents(
         documents=code_chunks, embedding=embeddings, persist_directory=persist_path
     )
-    db.persist()  # Ensure DB persist
 
+    # Ensure DB persist
+    db.persist()
     print("Index built.")
 
 
-def answer_question(question, db):
+def answer_question(question, db) -> str:
     """Generates code response based on the question"""
 
     template = """You are helpful coding assistant that has experience in coding. You're tasked to answer the user's question based on the code provided. If you cannot answer the question, ask user to rephrase and provide more context to assist code search.
@@ -109,8 +113,9 @@ Helpful answer:
     context = ""
     for _doc in docs:
         context += "Source File: " + _doc.metadata["source"] + "\n"
-        context += "Source Code:\n" + _doc.page_content + "_ " * 20 + "\n"
+        context += "Source Code:\n" + _doc.page_content + "\n" + "_ " * 20 + "\n"
 
+    # Use text-bison to generate response
     model = TextGenerationModel.from_pretrained("text-bison-32k")
     response = model.predict(
         template.format(context=context, input=question),
@@ -118,4 +123,4 @@ Helpful answer:
         max_output_tokens=4096,
     )
 
-    print(response.text)
+    return response.text
