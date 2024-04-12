@@ -1,13 +1,16 @@
 """Extension for the magic commands."""
 
 import os
-from IPython.core.magic import (cell_magic, Magics, magics_class)
+from IPython.core.magic import line_magic, cell_magic, Magics, magics_class
+from langchain_google_vertexai import VertexAIEmbeddings
+from langchain.vectorstores.chroma import Chroma
 
 from codey_assist import codegen, code_qna_gen
 
 @magics_class
 class CodeyMagic(Magics):
     """Class for the magic commands."""
+    PERSIST_DIR = "codey_assist.index"
 
     def __init__(self, shell):
         super().__init__(shell)  # Initialize the parent class
@@ -27,14 +30,14 @@ class CodeyMagic(Magics):
 
         other_code = "\n".join(code_cells)
         generated_code = codegen.generate_code(line + "\n" + cell, other_code)
+        print("Response is in the next cell!")
 
         self.shell.set_next_input(generated_code, replace=False)
 
-    @cell_magic
-    def code_qna(self, line, cell):
-        """Handler for the %%code_qna magic command."""
-
-        # Find every python file in the current working directory and sub-directories
+    @line_magic
+    def index(self, __):
+        """Handler for the %index magic command."""
+        # Find files in the current working directory and sub-directories
         all_files = []
 
         for root, _, files in os.walk(os.getcwd()):
@@ -56,6 +59,16 @@ class CodeyMagic(Magics):
         for file in all_files:
             code_chunks.extend(code_qna_gen.chunk_code(file))
 
-        db = code_qna_gen.create_index(code_chunks)
+        code_qna_gen.create_index(code_chunks, persist_path=self.PERSIST_DIR)
+
+    @cell_magic
+    def code_qna(self, line, cell):
+        """Handler for the %%code_qna magic command."""
+
+        embeddings = VertexAIEmbeddings(
+            model_name="textembedding-gecko@003",
+        )
+
+        db = Chroma(persist_directory=self.PERSIST_DIR, embedding_function=embeddings)
 
         code_qna_gen.answer_question(line + "\n" + cell, db)

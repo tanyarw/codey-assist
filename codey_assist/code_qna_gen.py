@@ -16,12 +16,12 @@ vertexai.init(project="gdc-ai-playground", location="us-central1")
 
 
 def chunk_code(file_name):
-    """Chunks a code file into smaller units under 512 characters."""
+    """Chunks a code file into smaller units."""
     chunked_code = []
 
     if file_name.endswith(".py"):
         python_splitter = RecursiveCharacterTextSplitter.from_language(
-            language=Language.PYTHON, chunk_size=1000, chunk_overlap=100
+            language=Language.PYTHON, chunk_size=1000, chunk_overlap=200
         )
         with open(file_name, "r") as f:
             code = f.read()
@@ -31,7 +31,17 @@ def chunk_code(file_name):
 
     elif file_name.endswith(".js"):
         js_splitter = RecursiveCharacterTextSplitter.from_language(
-            language=Language.JS, chunk_size=1000, chunk_overlap=100
+            language=Language.JS, chunk_size=1000, chunk_overlap=200
+        )
+        with open(file_name, "r") as f:
+            code = f.read()
+            chunked_code = js_splitter.create_documents(
+                [code], metadatas=[{"source": file_name}]
+            )
+
+    elif file_name.endswith(".md"):
+        js_splitter = RecursiveCharacterTextSplitter.from_language(
+            language=Language.MARKDOWN, chunk_size=1000, chunk_overlap=200
         )
         with open(file_name, "r") as f:
             code = f.read()
@@ -44,7 +54,7 @@ def chunk_code(file_name):
 
 def create_index(
     code_chunks: List[Document],
-    persist_path: str = "./.tmp/index",
+    persist_path: str,
 ):
     """Embeds texts with a pre-trained, foundational model and creates Chroma DB index."""
 
@@ -52,44 +62,54 @@ def create_index(
         model_name="textembedding-gecko@003",
     )
 
+    print("Building index...")
+
     db = Chroma.from_documents(
         documents=code_chunks, embedding=embeddings, persist_directory=persist_path
     )
     db.persist()  # Ensure DB persist
 
-    return db
+    print("Index built.")
 
 
 def answer_question(question, db):
     """Generates code response based on the question"""
 
-    template = """
-You are helpful coding assistant that has experience in coding. You're tasked to answer the user's question, based on the code context provided.
-code context:
+    template = """You are helpful coding assistant that has experience in coding. You're tasked to answer the user's question based on the code provided. If you cannot answer the question, ask user to rephrase and provide more context to assist code search.
+
+Code:
 {context}
 
+Examples:
+Q: <A question about how to use a function>
+A: <explain args and return value, show a simple accurate code example>
 
-user's question:
-{input}
+Q: <A question about an error the user is facing>
+A: <Diagnose how the error is related to the code, and suggest code fix>
 
-If you cannot find an answer ask the user to rephrase the question.
-Add supplemental code snippet where possible.
-answer:
+Q: <A question asking which function to call for a feature>
+A: <A description of the function and code snippet of how it can be used for the feature>
+
+Q: <A question about how to add a feature to the code base>
+A: <Suggestion with code snippets to implement the feature>
+
+User's question: {input}
+
+Helpful answer:
     """
 
     # Create the retrieval chain
-    model = TextGenerationModel.from_pretrained("text-bison-32k")
-
     retriever = db.as_retriever(search_type="similarity", search_kwargs={"k": 3})
     docs = retriever.get_relevant_documents(question)
 
     context = ""
-    for d in docs:
-        context += d.page_content + "\n" + "_ " * 20 + "\n"
+    for _doc in docs:
+        context += _doc.page_content + "\n" + "_ " * 20 + "\n"
 
+    model = TextGenerationModel.from_pretrained("text-bison-32k")
     response = model.predict(
         template.format(context=context, input=question),
-        temperature=0.3,
+        temperature=0.4,
         max_output_tokens=4096,
     )
 
