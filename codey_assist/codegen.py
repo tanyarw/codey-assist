@@ -21,10 +21,9 @@ You are a python developer working in a jupyter notebook. The code developed in 
 You have to generate code for the following query.
 {prompt}
 
-Surround the code in backticks ```python....```
+Do not put the code inside ``` or give any other text. Give the code directly.
 
-Code:
-    """
+Code: """
     response = model.predict(prefix=input_prompt, **parameters)
 
     return response.text

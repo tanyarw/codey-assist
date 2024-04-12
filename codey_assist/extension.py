@@ -27,7 +27,8 @@ class CodeyMagic(Magics):
 
         other_code = "\n".join(code_cells)
         generated_code = codegen.generate_code(line + "\n" + cell, other_code)
-        print(generated_code)
+
+        self.shell.set_next_input(generated_code, replace=False)
 
     @cell_magic
     def code_qna(self, line, cell):
