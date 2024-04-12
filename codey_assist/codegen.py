@@ -23,7 +23,7 @@ You have to generate code for the following query.
 
 Do not put the code inside ``` or give any other text. Give the code directly.
 
-Code: """
+Code:"""
     response = model.predict(prefix=input_prompt, **parameters)
 
-    return response.text
+    return response.text.strip()
