@@ -57,6 +57,7 @@ class CodeyMagic(Magics):
         # Find files in the current working directory and sub-directories
         all_files = []
         third_parent = os.path.abspath(os.path.join(os.getcwd(), "../../.."))
+        print("Walking directory:", third_parent)
 
         for root, _, files in os.walk(third_parent):
 

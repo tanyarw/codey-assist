@@ -21,6 +21,7 @@ else:
 def chunk_code(file_name: str) -> List[Document]:
     """Chunks a code file into smaller units."""
     chunked_code = []
+    print("Chunking", file_name)
 
     # Python splitter
     if file_name.endswith(".py"):
