@@ -1,5 +1,6 @@
 """Module to generate code"""
 
+import os
 import vertexai
 from vertexai.language_models import CodeGenerationModel
 
@@ -7,7 +8,7 @@ from vertexai.language_models import CodeGenerationModel
 def generate_code(prompt, other_code):
     """Function to encapsulate the call to your Vertex AI model."""
 
-    vertexai.init(project="gdc-ai-playground", location="us-central1")
+    vertexai.init(project=os.environ["PROJECT_ID"], location="us-central1")
     parameters = {
       "candidate_count": 1,
       "max_output_tokens": 1024,

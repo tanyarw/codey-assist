@@ -1,5 +1,6 @@
 """Module to answer code queries"""
 
+import os
 from typing import List
 import vertexai
 from vertexai.language_models import TextGenerationModel
@@ -11,7 +12,7 @@ from langchain_text_splitters import (
     RecursiveCharacterTextSplitter,
 )
 
-vertexai.init(project="gdc-ai-playground", location="us-central1")
+vertexai.init(project=os.environ["PROJECT_ID"], location="us-central1")
 
 
 def chunk_code(file_name: str) -> List[Document]:
