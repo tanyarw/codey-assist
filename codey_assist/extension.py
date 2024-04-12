@@ -12,11 +12,10 @@ from codey_assist import codegen, code_qna_gen
 class CodeyMagic(Magics):
     """Class for the magic commands."""
 
-    PERSIST_DIR = "codey_assist.index"
-
     def __init__(self, shell):
         super().__init__(shell)  # Initialize the parent class
         self.shell = shell  # Store the IPython instance
+        self.persist_path = "codey_assist.index"
 
     @cell_magic
     def codey(self, line, cell):
@@ -51,15 +50,14 @@ class CodeyMagic(Magics):
         self.shell.set_next_input(generated_code, replace=False)
 
     @line_magic
-    def index(self, __):
+    def index(self, line):
         """Handler for the %index magic command."""
+        self.persist_path = os.path.join(line, self.persist_path)
 
         # Find files in the current working directory and sub-directories
         all_files = []
-        third_parent = os.path.abspath(os.path.join(os.getcwd(), "../../.."))
-        print("Walking directory:", third_parent)
 
-        for root, _, files in os.walk(third_parent):
+        for root, _, files in os.walk(line):
 
             # TODO: Read from .gitignore
             # Ignore some folders
@@ -78,6 +76,7 @@ class CodeyMagic(Magics):
 
             # Find all other files
             for name in files:
+                print(name)
                 relative_path = os.path.relpath(os.path.join(root, name))
                 all_files.append(relative_path)
 
@@ -87,7 +86,7 @@ class CodeyMagic(Magics):
             code_chunks.extend(code_qna_gen.chunk_code(file))
 
         # Create Chroma DB index with chunked code
-        code_qna_gen.create_index(code_chunks, persist_path=self.PERSIST_DIR)
+        code_qna_gen.create_index(code_chunks, persist_path=self.persist_path)
 
     @cell_magic
     def code_qna(self, line, cell):
@@ -98,7 +97,7 @@ class CodeyMagic(Magics):
         )
 
         # Load index
-        db = Chroma(persist_directory=self.PERSIST_DIR, embedding_function=embeddings)
+        db = Chroma(persist_directory=self.persist_path, embedding_function=embeddings)
 
         # Retrieve relevant code chunks and generate a response
         answer = code_qna_gen.answer_question(line + "\n" + cell, db)
