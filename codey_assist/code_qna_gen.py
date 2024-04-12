@@ -12,7 +12,10 @@ from langchain_text_splitters import (
     RecursiveCharacterTextSplitter,
 )
 
-vertexai.init(project=os.environ["PROJECT_ID"], location="us-central1")
+if "PROJECT_ID" in os.environ:
+    vertexai.init(project=os.environ["PROJECT_ID"], location="us-central1")
+else:
+    raise ValueError("PROJECT_ID environment variable not set.")
 
 
 def chunk_code(file_name: str) -> List[Document]:

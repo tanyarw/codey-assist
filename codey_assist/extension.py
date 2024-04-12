@@ -61,7 +61,14 @@ class CodeyMagic(Magics):
 
             # TODO: Read from .gitignore
             # Ignore some folders
-            ignore_patterns = [".venv", "__pycache__", ".vscode", ".idea", ".git"]
+            ignore_patterns = [
+                ".venv",
+                "__pycache__",
+                ".vscode",
+                ".idea",
+                ".git",
+                "build",
+            ]
             if any(pattern in root for pattern in ignore_patterns):
                 continue
 

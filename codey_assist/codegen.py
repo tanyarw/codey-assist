@@ -4,16 +4,15 @@ import os
 import vertexai
 from vertexai.language_models import CodeGenerationModel
 
+if "PROJECT_ID" in os.environ:
+    vertexai.init(project=os.environ["PROJECT_ID"], location="us-central1")
+else:
+    raise ValueError("PROJECT_ID environment variable not set.")
 
 def generate_code(prompt, other_code):
     """Function to encapsulate the call to your Vertex AI model."""
 
-    vertexai.init(project=os.environ["PROJECT_ID"], location="us-central1")
-    parameters = {
-      "candidate_count": 1,
-      "max_output_tokens": 1024,
-      "temperature": 0.5
-    }
+    parameters = {"candidate_count": 1, "max_output_tokens": 1024, "temperature": 0.5}
     model = CodeGenerationModel.from_pretrained("code-bison")
     input_prompt = f"""
 You are a python developer working in a jupyter notebook. The code developed in the cells above is as follows:
