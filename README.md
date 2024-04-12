@@ -9,3 +9,11 @@
 %%codey
 <prompt>
 ```
+6. For code qna here are 2 steps. Index is a one time activity
+```
+%index path
+```
+```
+%%code_qna
+<prompt>
+```
