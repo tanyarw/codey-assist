@@ -56,8 +56,9 @@ class CodeyMagic(Magics):
 
         # Find files in the current working directory and sub-directories
         all_files = []
+        third_parent = os.path.abspath(os.path.join(os.getcwd(), "../../.."))
 
-        for root, _, files in os.walk(os.getcwd()):
+        for root, _, files in os.walk(third_parent):
 
             # TODO: Read from .gitignore
             # Ignore some folders
@@ -68,6 +69,8 @@ class CodeyMagic(Magics):
                 ".idea",
                 ".git",
                 "build",
+                ".ipynb_checkpoints",
+                "codey_assist",
             ]
             if any(pattern in root for pattern in ignore_patterns):
                 continue
