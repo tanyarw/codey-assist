@@ -83,15 +83,19 @@ Code:
 Examples:
 Q: <A question about how to use a function>
 A: <explain args and return value, show a simple accurate code example>
+Files: <relevant source files>
 
 Q: <A question about an error the user is facing>
 A: <Diagnose how the error is related to the code, and suggest code fix>
+Files: <relevant source files>
 
 Q: <A question asking which function to call for a feature>
 A: <A description of the function and code snippet of how it can be used for the feature>
+Files: <relevant source files>
 
 Q: <A question about how to add a feature to the code base>
-A: <Suggestion with code snippets to implement the feature>
+A: <Clear explanation and suggestions with code snippets to implement the feature>
+Files: <relevant source files>
 
 User's question: {input}
 
@@ -104,7 +108,8 @@ Helpful answer:
 
     context = ""
     for _doc in docs:
-        context += _doc.page_content + "\n" + "_ " * 20 + "\n"
+        context += "Source File: " + _doc.metadata["source"] + "\n"
+        context += "Source Code:\n" + _doc.page_content + "_ " * 20 + "\n"
 
     model = TextGenerationModel.from_pretrained("text-bison-32k")
     response = model.predict(
