@@ -15,7 +15,7 @@ class CodeyMagic(Magics):
     def __init__(self, shell):
         super().__init__(shell)  # Initialize the parent class
         self.shell = shell  # Store the IPython instance
-        self.persist_path = "codey_assist.index"
+        self.persist_path = ".tmp/"
 
     @cell_magic
     def codey(self, line, cell):
@@ -49,10 +49,9 @@ class CodeyMagic(Magics):
         print("Check out the next cell!")
         self.shell.set_next_input(generated_code, replace=False)
 
-    @line_magic
     def index(self, line):
-        """Handler for the %index magic command."""
-        self.persist_path = os.path.join(line, self.persist_path)
+        """Creates a new index DB."""
+        self.persist_path = os.path.join(os.path.abspath(line), self.persist_path)
 
         # Find files in the current working directory and sub-directories
         all_files = []
@@ -70,15 +69,16 @@ class CodeyMagic(Magics):
                 "build",
                 ".ipynb_checkpoints",
                 "codey_assist",
+                ".tmp",
+                "__pycache__",
             ]
             if any(pattern in root for pattern in ignore_patterns):
                 continue
 
             # Find all other files
             for name in files:
-                print(name)
-                relative_path = os.path.relpath(os.path.join(root, name))
-                all_files.append(relative_path)
+                fp = os.path.join(root, name)
+                all_files.append(os.path.abspath(fp))
 
         # Split code into chunks
         code_chunks = []
@@ -88,16 +88,51 @@ class CodeyMagic(Magics):
         # Create Chroma DB index with chunked code
         code_qna_gen.create_index(code_chunks, persist_path=self.persist_path)
 
+    @line_magic
+    def set_index(self, line):
+        """Sets the path for the index."""
+        line = os.path.abspath(line)
+        if not line.endswith(".tmp/") or not line.endswith(".tmp"):
+            line = os.path.join(line, ".tmp/")
+
+        if not os.path.exists(line) or os.listdir(line):
+            # create index
+            self.index(line.replace(".tmp/", "").replace(".tmp", ""))
+        else:
+            self.persist_path = line
+
+            # Load index
+            db = Chroma(
+                persist_directory=self.persist_path,
+                embedding_function=VertexAIEmbeddings(
+                    model_name="textembedding-gecko@003",
+                ),
+            )
+
+            # find changed files in parent directory
+            changed_files = code_qna_gen.get_changed_files_in_dir(
+                os.path.dirname(self.persist_path)
+            )
+
+            if changed_files:
+                print("Found changed files")
+                for file in changed_files:
+                    print(f"Updating index for {file}")
+                    doc_ids = code_qna_gen.get_documents_by_source(db, file)
+                    db.delete(doc_ids)
+                    db.add_documents(code_qna_gen.chunk_code(file))
+
     @cell_magic
     def code_qna(self, line, cell):
         """Handler for the %%code_qna magic command."""
 
-        embeddings = VertexAIEmbeddings(
-            model_name="textembedding-gecko@003",
-        )
-
         # Load index
-        db = Chroma(persist_directory=self.persist_path, embedding_function=embeddings)
+        db = Chroma(
+            persist_directory=self.persist_path,
+            embedding_function=VertexAIEmbeddings(
+                model_name="textembedding-gecko@003",
+            ),
+        )
 
         # Retrieve relevant code chunks and generate a response
         answer = code_qna_gen.answer_question(line + "\n" + cell, db)

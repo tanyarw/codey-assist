@@ -1,13 +1,10 @@
 """Module to generate code"""
 
-import os
 import vertexai
 from vertexai.language_models import CodeGenerationModel
 
-if "PROJECT_ID" in os.environ:
-    vertexai.init(project=os.environ["PROJECT_ID"], location="us-central1")
-else:
-    raise ValueError("PROJECT_ID environment variable not set.")
+
+vertexai.init(location="us-central1")
 
 def generate_code(prompt, other_code):
     """Function to encapsulate the call to your Vertex AI model."""
