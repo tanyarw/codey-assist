@@ -133,7 +133,7 @@ Please list the relevant source code file names as well.
 Answer:"""
 
     # Create the retrieval chain
-    retriever = db.as_retriever(search_type="similarity", search_kwargs={"k": 1})
+    retriever = db.as_retriever(search_type="similarity", search_kwargs={"k": 3})
     docs = retriever.get_relevant_documents(question)
 
     context = ""
@@ -141,6 +141,7 @@ Answer:"""
         context += "Source File: " + _doc.metadata["source"] + "\n"
         context += "Source Code:\n" + _doc.page_content + "\n" + "_ " * 20 + "\n"
 
+    print(context)
     model = GenerativeModel("gemini-1.0-pro-002")
     response = model.generate_content(
         template.format(context=context, input=question),
@@ -172,7 +173,7 @@ def get_changed_files_in_dir(directory_path):
 
     os.chdir(cwd)
     select_files = [
-        os.path.join(os.path.dirname(directory_path), f)
+        os.path.join(directory_path, f.split("/")[-1])
         for f in changed_files
         if f.endswith((".py", ".js", ".md", ".html", ".ts", ".go", ".java"))
     ]

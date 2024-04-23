@@ -95,7 +95,7 @@ class CodeyMagic(Magics):
         if not line.endswith(".tmp/") or not line.endswith(".tmp"):
             line = os.path.join(line, ".tmp/")
 
-        if not os.path.exists(line) or os.listdir(line):
+        if not os.path.exists(line) or not os.listdir(line):
             # create index
             self.index(line.replace(".tmp/", "").replace(".tmp", ""))
         else:
@@ -112,6 +112,8 @@ class CodeyMagic(Magics):
             # find changed files in parent directory
             changed_files = code_qna_gen.get_changed_files_in_dir(
                 os.path.dirname(self.persist_path)
+                .replace(".tmp/", "")
+                .replace(".tmp", "")
             )
 
             if changed_files:
@@ -121,6 +123,7 @@ class CodeyMagic(Magics):
                     doc_ids = code_qna_gen.get_documents_by_source(db, file)
                     db.delete(doc_ids)
                     db.add_documents(code_qna_gen.chunk_code(file))
+                print("Done.")
 
     @cell_magic
     def code_qna(self, line, cell):
