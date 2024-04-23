@@ -141,7 +141,6 @@ Answer:"""
         context += "Source File: " + _doc.metadata["source"] + "\n"
         context += "Source Code:\n" + _doc.page_content + "\n" + "_ " * 20 + "\n"
 
-    print(context)
     model = GenerativeModel("gemini-1.0-pro-002")
     response = model.generate_content(
         template.format(context=context, input=question),
