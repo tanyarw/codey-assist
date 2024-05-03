@@ -107,6 +107,7 @@ class CodeyMagic(Magics):
             if modified_files:
                 print("Found changed files")
                 for file in modified_files:
+                    # TODO: Logic for deleted files
                     print(f"Updating index for {file}")
                     doc_ids = code_qna_gen.get_documents_by_source(db, file)
                     db.delete(doc_ids)
