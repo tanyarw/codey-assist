@@ -14,21 +14,27 @@ def get_changed_files_in_dir(directory_path):
 
     os.chdir(directory_path)
     result = subprocess.run(
-        ["git", "diff", "--name-only", directory_path],
+        ["git", "status", "-s", directory_path],
         check=True,
         stdout=subprocess.PIPE,
         universal_newlines=True,
     )
+
     changed_files = result.stdout.splitlines()
-    print("Changed files:", changed_files)
+    select_files = {"D": [], "A": [], "M": []}
+
+    for file in changed_files:
+        if file.startswith("D"):
+            file = file[3:]
+            select_files["D"].append(os.path.join(directory_path, file))
+        elif file.startswith("A"):
+            file = file[3:]
+            select_files["A"].append(os.path.join(directory_path, file))
+        elif file.startswith("M"):
+            file = file[3:]
+            select_files["M"].append(os.path.join(directory_path, file))
 
     os.chdir(cwd)
-    select_files = [
-        os.path.join(directory_path, f)
-        for f in changed_files
-        if f.endswith((".py", ".js", ".md", ".html", ".ts", ".go", ".java"))
-    ]
-
     return select_files
 
 

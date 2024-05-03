@@ -90,6 +90,7 @@ class CodeyMagic(Magics):
             self.persist_path = line
 
             # Load index
+            print("Loading index...")
             db = Chroma(
                 persist_directory=self.persist_path,
                 embedding_function=VertexAIEmbeddings(
@@ -98,6 +99,7 @@ class CodeyMagic(Magics):
             )
 
             # find changed files in parent directory
+            print("Finding staged files...")
             modified_files = changed_files.get_changed_files_in_dir(
                 os.path.dirname(self.persist_path)
                 .replace(".tmp/", "")
@@ -105,14 +107,50 @@ class CodeyMagic(Magics):
             )
 
             if modified_files:
-                print("Found changed files")
-                for file in modified_files:
-                    # TODO: Logic for deleted files
-                    print(f"Updating index for {file}")
-                    doc_ids = code_qna_gen.get_documents_by_source(db, file)
-                    db.delete(doc_ids)
-                    db.add_documents(splitter.chunk_code(file))
-                print("Done.")
+                not_updated = False
+                for status, files in modified_files.items():
+                    if status == "D":
+                        for f in files:
+                            doc_ids = code_qna_gen.get_documents_by_source(db, f)
+
+                            if doc_ids:
+                                print(f"Deleting doc {f}")
+                                db.delete(doc_ids)
+                            else:
+                                print(f"Couldn't delete {f}")
+
+                    elif status == "M":
+                        for f in files:
+                            doc_ids = code_qna_gen.get_documents_by_source(db, f)
+
+                            if doc_ids:
+                                code_to_add = splitter.chunk_code(f)
+
+                                if code_to_add:
+                                    print(f"Updating doc {f}")
+                                    db.delete(doc_ids)
+                                    db.add_documents(code_to_add)
+                                else:
+                                    print(f"Not enough code context to update {f}")
+
+                            else:
+                                print(f"Couldn't update {f}")
+
+                    elif status == "A":
+                        for f in files:
+                            code_to_add = splitter.chunk_code(f)
+                            if code_to_add:
+                                print(f"Adding doc {f}")
+                                db.add_documents(code_to_add)
+                            else:
+                                print(f"Not enough code context to add {f}")
+                    else:
+                        not_updated = True
+
+                if not_updated:
+                    print("No updates to index.")
+                else:
+                    print("Done.")
 
     @cell_magic
     def code_qna(self, line, cell):
