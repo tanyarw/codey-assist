@@ -6,7 +6,7 @@ from langchain_google_vertexai import VertexAIEmbeddings
 from langchain.vectorstores.chroma import Chroma
 
 from codey_assist import codegen, code_qna_gen
-
+from codey_assist.utilities import splitter, changed_files
 
 @magics_class
 class CodeyMagic(Magics):
@@ -52,38 +52,26 @@ class CodeyMagic(Magics):
     def index(self, line):
         """Creates a new index DB."""
         self.persist_path = os.path.join(os.path.abspath(line), self.persist_path)
+        line = os.path.abspath(line)
 
+        ignore_patterns_dict = changed_files.get_ignore_patterns_dict(line)
         # Find files in the current working directory and sub-directories
         all_files = []
 
         for root, _, files in os.walk(line):
 
-            # TODO: Read from .gitignore
-            # Ignore some folders
-            ignore_patterns = [
-                ".venv",
-                "__pycache__",
-                ".vscode",
-                ".idea",
-                ".git",
-                "build",
-                ".ipynb_checkpoints",
-                "codey_assist",
-                ".tmp",
-                "__pycache__",
-            ]
-            if any(pattern in root for pattern in ignore_patterns):
-                continue
-
             # Find all other files
             for name in files:
                 fp = os.path.join(root, name)
-                all_files.append(os.path.abspath(fp))
+
+                if not changed_files.should_ignore(fp, ignore_patterns_dict):
+                    print(f"Adding: {fp}")
+                    all_files.append(os.path.abspath(fp))
 
         # Split code into chunks
         code_chunks = []
         for file in all_files:
-            code_chunks.extend(code_qna_gen.chunk_code(file))
+            code_chunks.extend(splitter.chunk_code(file))
 
         # Create Chroma DB index with chunked code
         code_qna_gen.create_index(code_chunks, persist_path=self.persist_path)
@@ -110,19 +98,19 @@ class CodeyMagic(Magics):
             )
 
             # find changed files in parent directory
-            changed_files = code_qna_gen.get_changed_files_in_dir(
+            modified_files = changed_files.get_changed_files_in_dir(
                 os.path.dirname(self.persist_path)
                 .replace(".tmp/", "")
                 .replace(".tmp", "")
             )
 
-            if changed_files:
+            if modified_files:
                 print("Found changed files")
-                for file in changed_files:
+                for file in modified_files:
                     print(f"Updating index for {file}")
                     doc_ids = code_qna_gen.get_documents_by_source(db, file)
                     db.delete(doc_ids)
-                    db.add_documents(code_qna_gen.chunk_code(file))
+                    db.add_documents(splitter.chunk_code(file))
                 print("Done.")
 
     @cell_magic
